@@ -1,12 +1,3 @@
-/*
- *
- * Prerequisite
- * sudo apt-get install libpcap-dev
- *
- * gcc pcount.c -o pcount -lpcap
- *
-*/
-
 #include <pcap/pcap.h>
 #include <sys/stat.h>
 #include <signal.h>
