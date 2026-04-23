@@ -28,14 +28,7 @@ struct pcap_stat pcapStats;
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <netinet/ip6.h>
-#include <net/ethernet.h>     /* the L2 protocols */
-
-static struct timeval startTime;
-unsigned long long numPkts = 0, numBytes = 0;
-pcap_dumper_t *dumper = NULL;
-
-/* *************************************** */
-
+#include <net/ethernet.h>     
 int32_t gmt_to_local(time_t t) {
   int dt, dir;
   struct tm *gmt, *loc;
