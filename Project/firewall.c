@@ -13,7 +13,7 @@
 
 struct Bucket {
     char ip[16];
-    int level;
+    unsigned int level;
     time_t timestamp;
     struct Bucket* next;
 };
@@ -22,7 +22,8 @@ struct Bucket* table[SIZE] = {0};
 
 int counter_packets = 0;
 
-
+void check_bucket();
+long int calc_rem(struct Bucket* b);
 void print_help();
 uint8_t hash(char* ip);
 void process_packet(unsigned char* user, const struct pcap_pkthdr* h, 
@@ -37,6 +38,7 @@ void process_packet(unsigned char* user, const struct pcap_pkthdr* h,
 
     if(protocol == 17){
 
+        check_bucket();
         uint8_t index = hash(ip);
         
         if(table[index] == 0){
@@ -53,13 +55,16 @@ void process_packet(unsigned char* user, const struct pcap_pkthdr* h,
             b->timestamp = time(NULL);
             b->next = NULL;
             table[index] = b;
+
+            printf("IP: %s salvato nel bucket\n", ip);
         } else {
             struct Bucket* b = table[index];
             bool check = false;
             if(strcmp(b->ip, ip) == 0){
-
+                printf("ip già presente ne buckt\n");
                 // ip trovato
                 check = true;
+                b->timestamp = time(NULL);
                 b->level++;
                 if(b->level > CAPACITY){
                     // inserisco nella blacklist
@@ -126,6 +131,8 @@ int main(int argc, char** argv){
     return 0;
 }
 
+long int calc_rem(struct Bucket* b){return (time(NULL) - b->timestamp)/TTL_IP_IN_BUCKET;}
+
 uint8_t hash(char* ip){
     
     uint8_t sum = 0;
@@ -135,6 +142,40 @@ uint8_t hash(char* ip){
     }
 
     return sum % (SIZE - 1);
+
+}
+
+void check_bucket(){
+
+    for(int i = 0; SIZE > i; i++){
+        if(table[i] == 0) continue;
+        struct Bucket* prev = NULL;
+        struct Bucket* b = table[i];
+        long int rem = calc_rem(b);
+        if(rem >= b->level) b->level = 0;
+        else b->level -= rem;
+
+        while(b != NULL){
+           if(b->level == 0){
+            struct Bucket* temp = b;
+            if(prev == NULL){
+                // rimuovo il primo nodo
+                table[i] = b->next;
+                b = table[i];
+                printf("Rimosso l'ip %s dal bucket\n", temp->ip);
+            } else {
+                    // rimuovo un nodo intermedio o ultimo
+                prev->next = b->next;
+                b = b->next;
+            }
+            free(temp);
+            } else {
+            // nodo non rimosso, vado avanti
+                prev = b;
+                b = b->next;
+            }
+        }
+    }
 
 }
 
